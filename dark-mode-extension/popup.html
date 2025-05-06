@@ -1,0 +1,26 @@
+ <!DOCTYPE html>
+<html>
+<head>
+  <style>
+    body { font-family: sans-serif; width: 250px; padding: 10px; }
+    input[type="range"] { width: 100%; }
+    label { display: block; margin-top: 10px; }
+  </style>
+</head>
+<body>
+  <h3>Dark Mode Settings</h3>
+  <label>
+    <input type="checkbox" id="toggle">
+    Enable for this site
+  </label>
+  <label>
+    Brightness: <span id="brightnessVal">100</span>%
+    <input type="range" id="brightness" min="50" max="150" value="100">
+  </label>
+  <label>
+    Contrast: <span id="contrastVal">100</span>%
+    <input type="range" id="contrast" min="50" max="150" value="100">
+  </label>
+  <script src="popup.js"></script>
+</body>
+</html>
