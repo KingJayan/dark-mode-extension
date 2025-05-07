@@ -29,7 +29,7 @@
   "commands": {
     "toggle-dark-mode": {
       "suggested_key": {
-        "default": "Ctrl+Shift+D"
+        "default": "Ctrl+Shift+G"
       },
       "description": "Toggle dark mode"
     }

@@ -10,9 +10,13 @@ const hueVal = document.getElementById('hueVal');
 const exportButton = document.getElementById('export');
 const importButton = document.getElementById('import');
 const resetButton = document.getElementById('reset');
+const applyCSSButton = document.getElementById('applyCSS');
+const toggleCSSButton = document.getElementById('toggleCSS');
+const shortcutInput = document.getElementById('shortcutInput');
 
 let currentHost = '';
 let debounceTimeout = null;
+let currentShortcut = 'Ctrl+Shift+G';
 
 // Update UI
 function updateUI(settings) {
@@ -35,7 +39,7 @@ function saveSettings(settings) {
   });
 }
 
-// Load settings
+// Get settings for the current site
 function getSettingsForSite(callback) {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     try {
@@ -92,6 +96,19 @@ hue.addEventListener('input', () => {
 });
 customCSS.addEventListener('input', updateAndSaveDebounced);
 
+// Apply custom CSS
+applyCSSButton.addEventListener('click', () => {
+  const settings = {
+    enabled: toggle.checked,
+    brightness: parseInt(brightness.value),
+    contrast: parseInt(contrast.value),
+    hue: parseInt(hue.value),
+    theme: theme.value,
+    customCSS: customCSS.value
+  };
+  saveSettings(settings);
+});
+
 // Reset settings
 resetButton.addEventListener('click', () => {
   const resetSettings = {
@@ -100,10 +117,17 @@ resetButton.addEventListener('click', () => {
     contrast: 100,
     hue: 0,
     theme: "classic",
-    customCSS: ''
+    customCSS: '' // Reset custom CSS as well
   };
   updateUI(resetSettings);
   saveSettings(resetSettings);
+});
+
+// Toggle collapsible CSS section
+toggleCSSButton.addEventListener('click', () => {
+  const cssSection = document.getElementById('cssSection');
+  cssSection.classList.toggle('collapsed');
+  toggleCSSButton.textContent = cssSection.classList.contains('collapsed') ? 'Show Custom CSS' : 'Hide Custom CSS';
 });
 
 // Export settings
@@ -131,4 +155,26 @@ importButton.addEventListener('change', (e) => {
     };
     reader.readAsText(file);
   }
+});
+
+// Handle keyboard shortcut input
+shortcutInput.addEventListener('input', () => {
+  currentShortcut = shortcutInput.value;
+  chrome.storage.sync.set({ shortcut: currentShortcut });
+  updateKeyboardShortcut(currentShortcut);
+});
+
+// Update the keyboard shortcut for toggling dark mode
+function updateKeyboardShortcut(shortcut) {
+  chrome.commands.update({
+    command: 'toggle-dark-mode',
+    shortcut: shortcut
+  });
+}
+
+// Get and set keyboard shortcut
+chrome.storage.sync.get('shortcut', (result) => {
+  currentShortcut = result.shortcut || 'Ctrl+Shift+G';
+  shortcutInput.value = currentShortcut;
+  updateKeyboardShortcut(currentShortcut);
 });
