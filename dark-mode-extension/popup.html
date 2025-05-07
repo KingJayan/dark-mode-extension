@@ -191,11 +191,11 @@
 
     /* Styling for apply button */
     #apply {
-      background-color: #28a745;
+      background-color: #007bff;
     }
 
     #apply:hover {
-      background-color: #218838;
+      background-color: #0056b3;
     }
 
     /* Collapsible section styling */
@@ -279,11 +279,7 @@
     <button id="apply">Apply Custom CSS</button>
   </div>
 
-  <!-- Shortcut input field -->
-  <div class="section">
-    <label for="shortcut">Shortcut for Dark Mode (e.g., Ctrl+Shift+G):</label>
-    <input type="text" id="shortcut" placeholder="Enter your shortcut">
-  </div>
+
 
   <!-- Import/Export Section -->
   <div class="section">
@@ -299,18 +295,20 @@
   <script src="popup.js"></script>
   <script>
     // Collapsible functionality for the Custom CSS section
-    var coll = document.getElementsByClassName("collapsible");
-    for (let i = 0; i < coll.length; i++) {
-      coll[i].addEventListener("click", function() {
-        this.classList.toggle("active");
-        var content = this.nextElementSibling;
-        if (content.style.display === "block") {
-          content.style.display = "none";
-        } else {
-          content.style.display = "block";
-        }
-      });
-    }
+    document.addEventListener("DOMContentLoaded", function() {
+      var coll = document.getElementsByClassName("collapsible");
+      for (var i = 0; i < coll.length; i++) {
+        coll[i].addEventListener("click", function() {
+          this.classList.toggle("active");
+          var content = this.nextElementSibling;
+          if (content.style.display === "block") {
+            content.style.display = "none";
+          } else {
+            content.style.display = "block";
+          }
+        });
+      }
+    });
   </script>
 </body>
 </html>

@@ -63,7 +63,16 @@ chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === "UPDATE_SETTINGS") {
     applyDarkMode(msg.settings);
   }
-  if (msg.type === "UPDATE_CUSTOM_CSS") {
-    applyDarkMode({ ...msg.settings, customCSS: msg.customCSS });
+});
+chrome.runtime.onMessage.addListener((msg) => {
+  if (msg.type === "APPLY_CUSTOM_CSS_DIRECT") {
+    const styleId = 'custom-css-direct';
+    let styleTag = document.getElementById(styleId);
+    if (styleTag) styleTag.remove();
+
+    styleTag = document.createElement('style');
+    styleTag.id = styleId;
+    styleTag.textContent = msg.css;
+    document.head.appendChild(styleTag);
   }
 });

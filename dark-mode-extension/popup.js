@@ -110,54 +110,14 @@ resetButton.addEventListener('click', () => {
 });
 
 // Handle apply custom CSS
+const applyButton = document.getElementById('applyCSS');
 applyButton.addEventListener('click', () => {
-  const settings = {
-    enabled: toggle.checked,
-    brightness: parseInt(brightness.value),
-    contrast: parseInt(contrast.value),
-    hue: parseInt(hue.value),
-    theme: theme.value,
-    customCSS: customCSS.value
-  };
-  saveSettings(settings);
+  const css = customCSS.value;
+
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.tabs.sendMessage(tabs[0].id, { type: "UPDATE_CUSTOM_CSS", customCSS: customCSS.value });
+    chrome.tabs.sendMessage(tabs[0].id, {
+      type: "APPLY_CUSTOM_CSS_DIRECT",
+      css: css
+    });
   });
-});
-
-// Handle keyboard shortcut input
-shortcutInput.value = currentShortcut;
-shortcutInput.addEventListener('input', () => {
-  const newShortcut = shortcutInput.value.trim();
-  if (newShortcut) {
-    currentShortcut = newShortcut;
-    chrome.commands.update({
-      name: 'toggle-dark-mode',
-      shortcut: currentShortcut
-    });
-    console.log(`Shortcut updated to: ${currentShortcut}`);
-  }
-});
-
-// Handling keyboard shortcuts with commands API
-chrome.commands.onCommand.addListener((command) => {
-  if (command === 'toggle-dark-mode') {
-    // Toggle dark mode based on the current host's settings
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      const tab = tabs[0];
-      chrome.storage.sync.get([tab.url], (result) => {
-        const settings = result[tab.url] || {
-          enabled: false,
-          brightness: 100,
-          contrast: 100,
-          hue: 0,
-          theme: "classic",
-          customCSS: ""
-        };
-        settings.enabled = !settings.enabled; // Toggle dark mode on/off
-        saveSettings(settings);
-        chrome.tabs.sendMessage(tab.id, { type: "UPDATE_SETTINGS", settings });
-      });
-    });
-  }
 });

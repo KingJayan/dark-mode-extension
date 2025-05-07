@@ -25,13 +25,5 @@
   ],
   "background": {
     "service_worker": "background.js"
-  },
-  "commands": {
-    "toggle-dark-mode": {
-      "suggested_key": {
-        "default": "Ctrl+Shift+G"
-      },
-      "description": "Toggle Dark Mode"
-    }
   }
 }
