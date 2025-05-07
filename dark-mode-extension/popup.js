@@ -86,3 +86,16 @@ hue.addEventListener('input', () => {
   hueVal.textContent = hue.value;
   updateAndSaveDebounced();
 });
+const resetButton = document.getElementById('reset');
+
+resetButton.addEventListener('click', () => {
+  const resetSettings = {
+    enabled: toggle.checked, // keep current enabled state
+    brightness: 100,
+    contrast: 100,
+    hue: 0,
+    theme: "classic"
+  };
+  updateUI(resetSettings);
+  saveSettings(resetSettings);
+});
