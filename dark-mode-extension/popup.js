@@ -9,6 +9,7 @@ const contrastVal = document.getElementById('contrastVal');
 const hueVal = document.getElementById('hueVal');
 
 let currentHost = '';
+let debounceTimeout = null;
 
 function updateUI(settings) {
   toggle.checked = settings.enabled;
@@ -25,7 +26,11 @@ function updateUI(settings) {
 function saveSettings(settings) {
   chrome.storage.sync.set({ [currentHost]: settings });
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.tabs.sendMessage(tabs[0].id, { type: "UPDATE_SETTINGS", settings });
+chrome.tabs.sendMessage(tabs[0].id, { type: "UPDATE_SETTINGS", settings })
+  .catch((error) => {
+    console.warn("Could not send message to content script:", error.message);
+  });
+
   });
 }
 
@@ -51,7 +56,7 @@ function getSettingsForSite(callback) {
 
 getSettingsForSite(updateUI);
 
-function updateAndSave() {
+function updateAndSaveDebounced() {
   const settings = {
     enabled: toggle.checked,
     brightness: parseInt(brightness.value),
@@ -59,10 +64,25 @@ function updateAndSave() {
     hue: parseInt(hue.value),
     theme: theme.value
   };
+
   updateUI(settings);
-  saveSettings(settings);
+
+  clearTimeout(debounceTimeout);
+  debounceTimeout = setTimeout(() => saveSettings(settings), 300); // wait 300ms after last change
 }
 
-[toggle, brightness, contrast, hue, theme].forEach(el => {
-  el.addEventListener('input', updateAndSave);
+// Use 'change' for checkbox/select, 'input' for sliders
+toggle.addEventListener('change', updateAndSaveDebounced);
+theme.addEventListener('change', updateAndSaveDebounced);
+brightness.addEventListener('input', () => {
+  brightnessVal.textContent = brightness.value;
+  updateAndSaveDebounced();
+});
+contrast.addEventListener('input', () => {
+  contrastVal.textContent = contrast.value;
+  updateAndSaveDebounced();
+});
+hue.addEventListener('input', () => {
+  hueVal.textContent = hue.value;
+  updateAndSaveDebounced();
 });
