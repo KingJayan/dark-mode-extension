@@ -3,49 +3,52 @@ const brightness = document.getElementById('brightness');
 const contrast = document.getElementById('contrast');
 const hue = document.getElementById('hue');
 const theme = document.getElementById('theme');
-
+const customCSS = document.getElementById('customCSS');
 const brightnessVal = document.getElementById('brightnessVal');
 const contrastVal = document.getElementById('contrastVal');
 const hueVal = document.getElementById('hueVal');
+const exportButton = document.getElementById('export');
+const importButton = document.getElementById('import');
+const resetButton = document.getElementById('reset');
 
 let currentHost = '';
 let debounceTimeout = null;
 
+// Update UI
 function updateUI(settings) {
   toggle.checked = settings.enabled;
   brightness.value = settings.brightness;
   contrast.value = settings.contrast;
   hue.value = settings.hue;
   theme.value = settings.theme;
-
+  customCSS.value = settings.customCSS || '';
   brightnessVal.textContent = settings.brightness;
   contrastVal.textContent = settings.contrast;
   hueVal.textContent = settings.hue;
 }
 
+// Save settings to storage
 function saveSettings(settings) {
   chrome.storage.sync.set({ [currentHost]: settings });
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-chrome.tabs.sendMessage(tabs[0].id, { type: "UPDATE_SETTINGS", settings })
-  .catch((error) => {
-    console.warn("Could not send message to content script:", error.message);
-  });
-
+    chrome.tabs.sendMessage(tabs[0].id, { type: "UPDATE_SETTINGS", settings });
   });
 }
 
+// Load settings
 function getSettingsForSite(callback) {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     try {
       const url = new URL(tabs[0].url);
-      currentHost = url.hostname;
+      currentHost = url.hostname + url.pathname;
       chrome.storage.sync.get([currentHost], (result) => {
         callback(result[currentHost] || {
           enabled: false,
           brightness: 100,
           contrast: 100,
           hue: 0,
-          theme: "classic"
+          theme: "classic",
+          customCSS: ''
         });
       });
     } catch (e) {
@@ -56,22 +59,23 @@ function getSettingsForSite(callback) {
 
 getSettingsForSite(updateUI);
 
+// Handle input changes
 function updateAndSaveDebounced() {
   const settings = {
     enabled: toggle.checked,
     brightness: parseInt(brightness.value),
     contrast: parseInt(contrast.value),
     hue: parseInt(hue.value),
-    theme: theme.value
+    theme: theme.value,
+    customCSS: customCSS.value
   };
 
   updateUI(settings);
 
   clearTimeout(debounceTimeout);
-  debounceTimeout = setTimeout(() => saveSettings(settings), 300); // wait 300ms after last change
+  debounceTimeout = setTimeout(() => saveSettings(settings), 300); // debounce
 }
 
-// Use 'change' for checkbox/select, 'input' for sliders
 toggle.addEventListener('change', updateAndSaveDebounced);
 theme.addEventListener('change', updateAndSaveDebounced);
 brightness.addEventListener('input', () => {
@@ -86,16 +90,45 @@ hue.addEventListener('input', () => {
   hueVal.textContent = hue.value;
   updateAndSaveDebounced();
 });
-const resetButton = document.getElementById('reset');
+customCSS.addEventListener('input', updateAndSaveDebounced);
 
+// Reset settings
 resetButton.addEventListener('click', () => {
   const resetSettings = {
     enabled: toggle.checked, // keep current enabled state
     brightness: 100,
     contrast: 100,
     hue: 0,
-    theme: "classic"
+    theme: "classic",
+    customCSS: ''
   };
   updateUI(resetSettings);
   saveSettings(resetSettings);
+});
+
+// Export settings
+exportButton.addEventListener('click', () => {
+  chrome.storage.sync.get([currentHost], (result) => {
+    const settings = result[currentHost];
+    const blob = new Blob([JSON.stringify(settings, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${currentHost}-settings.json`;
+    link.click();
+  });
+});
+
+// Import settings
+importButton.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (file) {
+    const reader = new FileReader();
+    reader.onload = function(event) {
+      const importedSettings = JSON.parse(event.target.result);
+      saveSettings(importedSettings);
+      updateUI(importedSettings);
+    };
+    reader.readAsText(file);
+  }
 });

@@ -155,7 +155,8 @@
 </head>
 <body>
   <h3>Dark Mode Settings</h3>
-
+  
+  <!-- Enable toggle switch -->
   <div class="section">
     <label>
       Enable for this site:
@@ -166,6 +167,7 @@
     </label>
   </div>
 
+  <!-- Theme selector -->
   <div class="section">
     <label for="theme">Theme:</label>
     <select id="theme">
@@ -176,6 +178,7 @@
     </select>
   </div>
 
+  <!-- Sliders for brightness, contrast, and hue -->
   <div class="section">
     <label class="slider-label">Brightness: <span class="slider-value" id="brightnessVal">100%</span></label>
     <input type="range" id="brightness" min="50" max="150" value="100">
@@ -191,8 +194,23 @@
     <input type="range" id="hue" min="0" max="360" value="0">
   </div>
 
+  <!-- Custom CSS editor -->
+  <div class="section">
+    <label for="customCSS">Custom CSS:</label>
+    <textarea id="customCSS" rows="6" style="width: 100%"></textarea>
+  </div>
+
+  <!-- Buttons for import/export and reset -->
+  <div class="section">
+    <button id="export">Export Settings</button>
+    <input type="file" id="import" style="display: none;">
+    <button onclick="document.getElementById('import').click();">Import Settings</button>
+  </div>
+  
   <button id="reset">Reset to Default</button>
-  <p> made by jayan </p>
+  
+  <p>Made by Jayan</p>
+  
   <script src="popup.js"></script>
 </body>
 </html>
