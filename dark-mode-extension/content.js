@@ -7,25 +7,37 @@ function applyDarkMode(settings) {
   styleTag = document.createElement('style');
   styleTag.id = styleId;
 
-  // Check for existing dark mode
-  if (document.body.style.backgroundColor === 'rgb(0, 0, 0)' || document.body.classList.contains('dark-mode')) {
-    console.log("Dark mode already active.");
-    return;
-  }
-
-  // Theme presets
   const themes = {
-    classic: { bg: "#121212", fg: "#e0e0e0", link: "#90caf9" },
-    midnight: { bg: "#0a0a0a", fg: "#b0b0b0", link: "#6ab7ff" },
-    focus: { bg: "#1a150a", fg: "#f5eac2", link: "#ffd54f" },
-    minimal: { bg: "#2b2b2b", fg: "#d0d0d0", link: "#a5d6a7" }
+    classic: {
+      bg: "#121212",
+      fg: "#e0e0e0",
+      link: "#90caf9"
+    },
+    midnight: {
+      bg: "#0a0a0a",
+      fg: "#b0b0b0",
+      link: "#6ab7ff"
+    },
+    focus: {
+      bg: "#1a150a",
+      fg: "#f5eac2",
+      link: "#ffd54f"
+    },
+    minimal: {
+      bg: "#2b2b2b",
+      fg: "#d0d0d0",
+      link: "#a5d6a7"
+    }
   };
 
   const theme = themes[settings.theme] || themes.classic;
 
   styleTag.textContent = `
     html {
-      filter: brightness(${settings.brightness}%) contrast(${settings.contrast}%) hue-rotate(${settings.hue}deg);
+      filter:
+        brightness(${settings.brightness}%)
+        contrast(${settings.contrast}%)
+        hue-rotate(${settings.hue}deg);
     }
     html, body, div, section, article, main, header, footer, nav, aside {
       background-color: ${theme.bg} !important;
@@ -42,27 +54,16 @@ function applyDarkMode(settings) {
     img, video {
       filter: brightness(90%) contrast(95%) !important;
     }
+    ${settings.customCSS}
   `;
   document.head.appendChild(styleTag);
 }
 
-function getSettings(callback) {
-  const url = location.hostname + location.pathname;
-  chrome.storage.sync.get([url], (result) => {
-    callback(result[url] || {
-      enabled: false,
-      brightness: 100,
-      contrast: 100,
-      hue: 0,
-      theme: "classic"
-    });
-  });
-}
-
-getSettings(applyDarkMode);
-
 chrome.runtime.onMessage.addListener((msg) => {
   if (msg.type === "UPDATE_SETTINGS") {
     applyDarkMode(msg.settings);
+  }
+  if (msg.type === "UPDATE_CUSTOM_CSS") {
+    applyDarkMode({ ...msg.settings, customCSS: msg.customCSS });
   }
 });

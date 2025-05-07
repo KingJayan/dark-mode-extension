@@ -3,48 +3,47 @@ const brightness = document.getElementById('brightness');
 const contrast = document.getElementById('contrast');
 const hue = document.getElementById('hue');
 const theme = document.getElementById('theme');
-const customCSS = document.getElementById('customCSS');
+
 const brightnessVal = document.getElementById('brightnessVal');
 const contrastVal = document.getElementById('contrastVal');
 const hueVal = document.getElementById('hueVal');
-const exportButton = document.getElementById('export');
-const importButton = document.getElementById('import');
+const customCSS = document.getElementById('customCSS');
+const shortcutInput = document.getElementById('shortcut');
 const resetButton = document.getElementById('reset');
-const applyCSSButton = document.getElementById('applyCSS');
-const toggleCSSButton = document.getElementById('toggleCSS');
-const shortcutInput = document.getElementById('shortcutInput');
+const applyButton = document.getElementById('apply');
 
 let currentHost = '';
 let debounceTimeout = null;
 let currentShortcut = 'Ctrl+Shift+G';
 
-// Update UI
 function updateUI(settings) {
   toggle.checked = settings.enabled;
   brightness.value = settings.brightness;
   contrast.value = settings.contrast;
   hue.value = settings.hue;
   theme.value = settings.theme;
-  customCSS.value = settings.customCSS || '';
+
   brightnessVal.textContent = settings.brightness;
   contrastVal.textContent = settings.contrast;
   hueVal.textContent = settings.hue;
+  customCSS.value = settings.customCSS || '';
 }
 
-// Save settings to storage
 function saveSettings(settings) {
   chrome.storage.sync.set({ [currentHost]: settings });
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-    chrome.tabs.sendMessage(tabs[0].id, { type: "UPDATE_SETTINGS", settings });
+    chrome.tabs.sendMessage(tabs[0].id, { type: "UPDATE_SETTINGS", settings })
+      .catch((error) => {
+        console.warn("Could not send message to content script:", error.message);
+      });
   });
 }
 
-// Get settings for the current site
 function getSettingsForSite(callback) {
   chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
     try {
       const url = new URL(tabs[0].url);
-      currentHost = url.hostname + url.pathname;
+      currentHost = url.hostname;
       chrome.storage.sync.get([currentHost], (result) => {
         callback(result[currentHost] || {
           enabled: false,
@@ -52,7 +51,7 @@ function getSettingsForSite(callback) {
           contrast: 100,
           hue: 0,
           theme: "classic",
-          customCSS: ''
+          customCSS: ""
         });
       });
     } catch (e) {
@@ -63,7 +62,6 @@ function getSettingsForSite(callback) {
 
 getSettingsForSite(updateUI);
 
-// Handle input changes
 function updateAndSaveDebounced() {
   const settings = {
     enabled: toggle.checked,
@@ -77,9 +75,10 @@ function updateAndSaveDebounced() {
   updateUI(settings);
 
   clearTimeout(debounceTimeout);
-  debounceTimeout = setTimeout(() => saveSettings(settings), 300); // debounce
+  debounceTimeout = setTimeout(() => saveSettings(settings), 300); // wait 300ms after last change
 }
 
+// Add event listeners for input change and save settings
 toggle.addEventListener('change', updateAndSaveDebounced);
 theme.addEventListener('change', updateAndSaveDebounced);
 brightness.addEventListener('input', () => {
@@ -94,10 +93,24 @@ hue.addEventListener('input', () => {
   hueVal.textContent = hue.value;
   updateAndSaveDebounced();
 });
-customCSS.addEventListener('input', updateAndSaveDebounced);
 
-// Apply custom CSS
-applyCSSButton.addEventListener('click', () => {
+// Handle reset to default
+resetButton.addEventListener('click', () => {
+  const resetSettings = {
+    enabled: toggle.checked,
+    brightness: 100,
+    contrast: 100,
+    hue: 0,
+    theme: "classic",
+    customCSS: ""
+  };
+  updateUI(resetSettings);
+  saveSettings(resetSettings);
+  customCSS.value = ''; // Reset custom CSS field
+});
+
+// Handle apply custom CSS
+applyButton.addEventListener('click', () => {
   const settings = {
     enabled: toggle.checked,
     brightness: parseInt(brightness.value),
@@ -107,74 +120,44 @@ applyCSSButton.addEventListener('click', () => {
     customCSS: customCSS.value
   };
   saveSettings(settings);
-});
-
-// Reset settings
-resetButton.addEventListener('click', () => {
-  const resetSettings = {
-    enabled: toggle.checked, // keep current enabled state
-    brightness: 100,
-    contrast: 100,
-    hue: 0,
-    theme: "classic",
-    customCSS: '' // Reset custom CSS as well
-  };
-  updateUI(resetSettings);
-  saveSettings(resetSettings);
-});
-
-// Toggle collapsible CSS section
-toggleCSSButton.addEventListener('click', () => {
-  const cssSection = document.getElementById('cssSection');
-  cssSection.classList.toggle('collapsed');
-  toggleCSSButton.textContent = cssSection.classList.contains('collapsed') ? 'Show Custom CSS' : 'Hide Custom CSS';
-});
-
-// Export settings
-exportButton.addEventListener('click', () => {
-  chrome.storage.sync.get([currentHost], (result) => {
-    const settings = result[currentHost];
-    const blob = new Blob([JSON.stringify(settings, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${currentHost}-settings.json`;
-    link.click();
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    chrome.tabs.sendMessage(tabs[0].id, { type: "UPDATE_CUSTOM_CSS", customCSS: customCSS.value });
   });
-});
-
-// Import settings
-importButton.addEventListener('change', (e) => {
-  const file = e.target.files[0];
-  if (file) {
-    const reader = new FileReader();
-    reader.onload = function(event) {
-      const importedSettings = JSON.parse(event.target.result);
-      saveSettings(importedSettings);
-      updateUI(importedSettings);
-    };
-    reader.readAsText(file);
-  }
 });
 
 // Handle keyboard shortcut input
+shortcutInput.value = currentShortcut;
 shortcutInput.addEventListener('input', () => {
-  currentShortcut = shortcutInput.value;
-  chrome.storage.sync.set({ shortcut: currentShortcut });
-  updateKeyboardShortcut(currentShortcut);
+  const newShortcut = shortcutInput.value.trim();
+  if (newShortcut) {
+    currentShortcut = newShortcut;
+    chrome.commands.update({
+      name: 'toggle-dark-mode',
+      shortcut: currentShortcut
+    });
+    console.log(`Shortcut updated to: ${currentShortcut}`);
+  }
 });
 
-// Update the keyboard shortcut for toggling dark mode
-function updateKeyboardShortcut(shortcut) {
-  chrome.commands.update({
-    command: 'toggle-dark-mode',
-    shortcut: shortcut
-  });
-}
-
-// Get and set keyboard shortcut
-chrome.storage.sync.get('shortcut', (result) => {
-  currentShortcut = result.shortcut || 'Ctrl+Shift+G';
-  shortcutInput.value = currentShortcut;
-  updateKeyboardShortcut(currentShortcut);
+// Handling keyboard shortcuts with commands API
+chrome.commands.onCommand.addListener((command) => {
+  if (command === 'toggle-dark-mode') {
+    // Toggle dark mode based on the current host's settings
+    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+      const tab = tabs[0];
+      chrome.storage.sync.get([tab.url], (result) => {
+        const settings = result[tab.url] || {
+          enabled: false,
+          brightness: 100,
+          contrast: 100,
+          hue: 0,
+          theme: "classic",
+          customCSS: ""
+        };
+        settings.enabled = !settings.enabled; // Toggle dark mode on/off
+        saveSettings(settings);
+        chrome.tabs.sendMessage(tab.id, { type: "UPDATE_SETTINGS", settings });
+      });
+    });
+  }
 });
