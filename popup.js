@@ -10,7 +10,7 @@ const hueVal = document.getElementById('hueVal');
 const customCSS = document.getElementById('customCSS');
 const shortcutInput = document.getElementById('shortcut');
 const resetButton = document.getElementById('reset');
-const applyButton = document.getElementById('apply');
+const applyButton = document.getElementById('applyCSS');
 
 let currentHost = '';
 let debounceTimeout = null;
@@ -110,7 +110,6 @@ resetButton.addEventListener('click', () => {
 });
 
 // Handle apply custom CSS
-const applyButton = document.getElementById('applyCSS');
 applyButton.addEventListener('click', () => {
   const css = customCSS.value;
 
@@ -121,3 +120,18 @@ applyButton.addEventListener('click', () => {
     });
   });
 });
+
+document.addEventListener("DOMContentLoaded", () => {
+  const collapsible = document.querySelector(".collapsible");
+  const content = document.querySelector(".collapsible-content");
+
+  if (collapsible && content) {
+    content.classList.remove("open");
+
+    collapsible.addEventListener("click", () => {
+      content.classList.toggle("open");
+      collapsible.classList.toggle("active"); // Arrow icon rotates
+    });
+  }
+});
+
